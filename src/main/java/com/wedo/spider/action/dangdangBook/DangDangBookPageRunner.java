@@ -37,8 +37,11 @@ public class DangDangBookPageRunner implements Runnable {
 	private final static DesiredCapabilities dcaps = new DesiredCapabilities();
 
 	private String startPage; // 爬取开始页面
+	private String dataOutPutPath; // 数据输出页面
+	private String phantomjsPath; // phantomjs路径
 
 	static {
+		// firfoxDriver 驱动支持
 		System.setProperty("webdriver.gecko.driver", "/home/melody/devOpt/geckodriver");
 		// ssl证书支持
 		dcaps.setCapability("acceptSslCerts", true);
@@ -53,16 +56,25 @@ public class DangDangBookPageRunner implements Runnable {
 		// dcaps.setCapability("phantomjs.page.customHeaders.User-Agent",
 		// "Mozilla/5.0
 		// (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0");
-
 		// js支持
 		dcaps.setJavascriptEnabled(true);
+
+	}
+
+	public DangDangBookPageRunner(String startPage, String dataOutPutPath, String phantomjsPath) {
+		this.startPage = startPage;
+		this.dataOutPutPath = dataOutPutPath;
+		this.phantomjsPath = phantomjsPath;
 		// 驱动支持
-		dcaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY,
-				"/home/melody/devOpt/phantomjs-2.1.1-linux-x86_64/bin/phantomjs");
+		dcaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY, phantomjsPath);
+		// 驱动支持
+		// dcaps.setCapability(PhantomJSDriverService.PHANTOMJS_EXECUTABLE_PATH_PROPERTY,"/home/melody/devOpt/phantomjs-2.1.1-linux-x86_64/bin/phantomjs");
 	}
 
 	@Override
 	public void run() {
+		// 开启守护线程
+
 		// 判断是否为恢复页面
 
 		PhantomJSDriver driver = new PhantomJSDriver(dcaps);
@@ -76,10 +88,10 @@ public class DangDangBookPageRunner implements Runnable {
 		while (next) {
 			page++;
 			int item = 1;
-			for (Iterator iterator = findElements.iterator(); iterator.hasNext();) {
+			for (int i = 0; i < findElements.size(); i++) {
 				Map<String, Object> dataMap = new HashMap<String, Object>();
 
-				WebElement webElement = (WebElement) iterator.next();
+				WebElement webElement = (WebElement) findElements.get(i);
 				WebElement aTag = webElement.findElement(By.className("name")).findElement(By.tagName("a"));
 
 				// 进入数据页面
@@ -93,29 +105,36 @@ public class DangDangBookPageRunner implements Runnable {
 				if (!isExited) {
 					continue;
 				}
-				System.out.println("第 " + page + "页 --> " + item + " 条 " + "  " + item + "/" + findElements.size());
+				// System.out.println("第 " + page + "页 --> " + item + " 条 " + " " + item + "/" +
+				// findElements.size());
+				logger.info("抓取第 " + page + "页 --> " + item + " 条 " + "  " + item + "/" + findElements.size());
+
 				WebElement breadcrumb = webdriver2.findElement(By.id("breadcrumb"));
 				Document breadcrumbEle = Jsoup.parse(breadcrumb.getText());
 				String rawText = breadcrumbEle.text();
-				System.out.println(rawText);
+				// System.out.println(rawText);
+				logger.info(rawText);
 				dataMap.put("tagLine", rawText);
 
 				WebElement name_info = webdriver2.findElement(By.className("name_info"));
 				Document name_infoEle = Jsoup.parse(name_info.getText());
 				String name_info_Txt = name_infoEle.text();
-				System.out.println(name_info_Txt);
+				// System.out.println(name_info_Txt);
+				logger.info(name_info_Txt);
 				dataMap.put("nameInfo", name_info_Txt);
 
 				WebElement messbox_info = webdriver2.findElement(By.className("messbox_info"));
 				Document messbox_infoEle = Jsoup.parse(messbox_info.getText());
 				String messbox_info_Txt = messbox_infoEle.text();
-				System.out.println(messbox_info_Txt);
+				// System.out.println(messbox_info_Txt);
+				logger.info(messbox_info_Txt);
 				dataMap.put("messbox_info", messbox_info_Txt);
 
 				WebElement price_info = webdriver2.findElement(By.className("price_info"));
 				Document price_infoEle = Jsoup.parse(price_info.getText());
 				String price_infoEle_Txt = price_infoEle.text();
-				System.out.println(price_infoEle_Txt);
+				// System.out.println(price_infoEle_Txt);
+				logger.info(price_infoEle_Txt);
 				dataMap.put("price_info", price_infoEle_Txt);
 				try {
 					webdriver2.quit();
