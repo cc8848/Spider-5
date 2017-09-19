@@ -4,12 +4,13 @@ import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Timer;
 
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.openqa.selenium.By;
@@ -40,6 +41,11 @@ public class DangDangBookPageRunner implements Runnable {
 	private String dataOutPutPath; // 数据输出页面
 	private String phantomjsPath; // phantomjs路径
 
+	private int recoverStartPage = -1; // 恢复线程起始页
+	private int recoverStartItem = -1; // 恢复线程起始条目
+	private String revoerStartPageUrl = ""; // 恢复页面的URL，用作标记为该线程是否为恢复线程，同时作为该线程的起始页
+	// 当前存储所有数据的对象
+	private List<Map<String, Object>> listData = new ArrayList<Map<String, Object>>();
 	static {
 		// firfoxDriver 驱动支持
 		System.setProperty("webdriver.gecko.driver", "/home/melody/devOpt/geckodriver");
@@ -50,7 +56,7 @@ public class DangDangBookPageRunner implements Runnable {
 		// css搜索支持
 		dcaps.setCapability("cssSelectorsEnabled", true);
 		// 关闭图片加载 慎关闭 加载变快 容易被禁
-		dcaps.setCapability("phantomjs.page.settings.loadImages", true);
+		dcaps.setCapability("phantomjs.page.settings.loadImages", false);
 		// dcaps.setCapability("phantomjs.page.settings.userAgent", "Mozilla/5.0
 		// (Windows NT 10.0; Win64; x64; rv:54.0) Gecko/20100101 Firefox/54.0");
 		// dcaps.setCapability("phantomjs.page.customHeaders.User-Agent",
@@ -73,24 +79,55 @@ public class DangDangBookPageRunner implements Runnable {
 
 	@Override
 	public void run() {
-		// 开启守护线程
+		// 判断当前线程是否为恢复线程
+		if (!StringUtils.isBlank(revoerStartPageUrl)) {
+			logger.info("开启恢复线程,恢复页面URL: " + revoerStartPageUrl);
+		} else {
+			logger.info("开启一个新的爬取线程，爬取URL ： " + startPage);
+		}
 
-		// 判断是否为恢复页面
+		// 开启守护线程
+		DangDangBookCrawlerDaemonTask task = new DangDangBookCrawlerDaemonTask(dataOutPutPath, phantomjsPath);
+		Timer timer = new Timer();
+		task.setTimer(timer); // 开启新线程后 就线程中的定时任务需要关闭
+		timer.schedule(task, 1000 * 10 * 60, 1000 * 60 * 5); // 线程开启后10分钟启动任务，每隔五分钟执行一次
+		logger.info("生成守护线程：" + revoerStartPageUrl);
 
 		PhantomJSDriver driver = new PhantomJSDriver(dcaps);
-		driver.get(startPage);
+		// 生成Driver
+		if (StringUtils.isBlank(revoerStartPageUrl)) {
+			driver.get(revoerStartPageUrl);
+			task.getSaveData().addAll(listData);
+		} else {
+			driver.get(startPage);
+		}
+		// 设置恢复页面
+		task.setRecoverPageUrl(startPage);
+		task.setDriver(driver);
 
 		WebElement ul = driver.findElement(By.id("component_0__0__6612"));
 		List<WebElement> findElements = ul.findElements(By.tagName("li"));
-		List<Map<String, Object>> liData = new ArrayList<Map<String, Object>>();
 		boolean next = true;
-		int page = 0;
+		boolean recoverFlag = true; // 线程恢复标志 表示线程恢复后 进入到下一页后 不需要再判断recoverItem
+		int pageNum = 1; // 无论是恢复线程还是非恢复线程，初始爬取页面编号都为1
+		int item = 1;
+		
 		while (next) {
-			page++;
-			int item = 1;
-			for (int i = 0; i < findElements.size(); i++) {
-				Map<String, Object> dataMap = new HashMap<String, Object>();
+			item = 1;
+			// 只有当开启pageNum大于恢复页面Num时才进入爬取列表
+			for (int i = 0; pageNum >= recoverStartPage && i < findElements.size(); i++) {
+				// 判断是否为恢复线程，并找到需要抓取的那一条数据
+				if (item < recoverStartItem && recoverFlag) {
+					item++;
+					continue;
+				} else {
+					recoverFlag = false;
+				}
+				// 设置守护线程判断参数
+				task.setCurrentItemCount(item);
+				task.setCurrentPageCount(pageNum);
 
+				Map<String, Object> dataMap = new HashMap<String, Object>();
 				WebElement webElement = (WebElement) findElements.get(i);
 				WebElement aTag = webElement.findElement(By.className("name")).findElement(By.tagName("a"));
 
@@ -107,7 +144,7 @@ public class DangDangBookPageRunner implements Runnable {
 				}
 				// System.out.println("第 " + page + "页 --> " + item + " 条 " + " " + item + "/" +
 				// findElements.size());
-				logger.info("抓取第 " + page + "页 --> " + item + " 条 " + "  " + item + "/" + findElements.size());
+				logger.info("抓取第 " + pageNum + "页 --> " + item + " 条 " + "  " + item + "/" + findElements.size());
 
 				WebElement breadcrumb = webdriver2.findElement(By.id("breadcrumb"));
 				Document breadcrumbEle = Jsoup.parse(breadcrumb.getText());
@@ -140,9 +177,12 @@ public class DangDangBookPageRunner implements Runnable {
 					webdriver2.quit();
 				} catch (Exception e) {
 				}
-				liData.add(dataMap);
+				listData.add(dataMap);
+				task.getSaveData().add(dataMap);	// 保存一份数据
+				// 条目数增加
 				item++;
 			}
+
 			WebElement nextEle = driver.findElement(By.className("paging")).findElement(By.className("next"));
 			if (nextEle != null) {
 				next = true;
@@ -157,14 +197,27 @@ public class DangDangBookPageRunner implements Runnable {
 				ul = driver.findElement(By.id("component_0__0__6612"));
 				findElements = ul.findElements(By.tagName("li"));
 			} else {
+				// 最后一页 运行终止
+				try {
+					timer.cancel();
+					driver.quit();
+				} catch (Exception e) {
+				}
 				break;
 			}
+			logger.info("进入到下一页从");
+			// 进入下一个页面 编号加1
+			pageNum++;
 		}
+
 		try {
-			FileUtils.writeLines(new File("/home/melody/hhhzzz.txt"), liData);
+			FileUtils.writeLines(new File("/home/melody/hhhzzz.txt"), listData);
 		} catch (IOException e) {
 			e.printStackTrace();
 		}
+
+		// 关闭相关资源
+
 	}
 
 	/**
@@ -193,6 +246,22 @@ public class DangDangBookPageRunner implements Runnable {
 		} catch (Exception e) {
 			return false;
 		}
+	}
+
+	public void setRecoverStartPage(int recoverStartPage) {
+		this.recoverStartPage = recoverStartPage;
+	}
+
+	public void setRecoverStartItem(int recoverStartItem) {
+		this.recoverStartItem = recoverStartItem;
+	}
+
+	public void setRevoerStartPageUrl(String revoerStartPageUrl) {
+		this.revoerStartPageUrl = revoerStartPageUrl;
+	}
+
+	public List<Map<String, Object>> getListData() {
+		return listData;
 	}
 
 }
