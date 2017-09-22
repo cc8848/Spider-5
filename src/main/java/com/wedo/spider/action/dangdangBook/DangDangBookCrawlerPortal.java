@@ -1,4 +1,5 @@
 package com.wedo.spider.action.dangdangBook;
+
 /**
  * 爬虫开启入口
  * 
@@ -13,8 +14,13 @@ public class DangDangBookCrawlerPortal {
 		// 关闭相关资源
 		
 		// 杀死一部分进程
+		String startPage="http://category.dangdang.com/cp01.54.00.00.00.00.html";
+		String dataOutPutPath = "";
+		String phantomjsPath = "/home/melody/devOpt/phantomjs-2.1.1-linux-x86_64/bin/phantomjs";
+		
+		String sad = "";
+		new Thread(new DangDangBookPageRunner(startPage,  dataOutPutPath, phantomjsPath)).start();
 		
 	}
-	
-	
+
 }

@@ -95,7 +95,7 @@ public class DangDangBookPageRunner implements Runnable {
 
 		PhantomJSDriver driver = new PhantomJSDriver(dcaps);
 		// 生成Driver
-		if (StringUtils.isBlank(revoerStartPageUrl)) {
+		if (!StringUtils.isBlank(revoerStartPageUrl)) {
 			driver.get(revoerStartPageUrl);
 			task.getSaveData().addAll(listData);
 		} else {
@@ -137,19 +137,23 @@ public class DangDangBookPageRunner implements Runnable {
 				PhantomJSDriver webdriver2 = new PhantomJSDriver(dcaps);
 				webdriver2.get(aTag.getAttribute("href"));
 				// 等待breadcrumb元素出现，如果没有则返回
-				boolean isExited = waitForElement(By.id("breadcrumb"), webdriver2);
+//				boolean isExited = waitForElement(By.id("breadcrumb"), webdriver2);
 				// 如果元素不存在 则返回
-				if (!isExited) {
-					continue;
-				}
+//				if (!isExited) {
+//					continue;
+//				}
 				// System.out.println("第 " + page + "页 --> " + item + " 条 " + " " + item + "/" +
 				// findElements.size());
-				logger.info("抓取第 " + pageNum + "页 --> " + item + " 条 " + "  " + item + "/" + findElements.size());
-
 				WebElement breadcrumb = webdriver2.findElement(By.id("breadcrumb"));
+				if(breadcrumb == null) {			// 如果分类数据为空，则舍弃这条数据
+					item++;
+					continue;
+				}
+				logger.info("抓取第 " + pageNum + "页 --> " + item + " 条 " + "  " + item + "/" + findElements.size());
 				Document breadcrumbEle = Jsoup.parse(breadcrumb.getText());
 				String rawText = breadcrumbEle.text();
 				// System.out.println(rawText);
+				logger.info(webdriver2.getCurrentUrl());
 				logger.info(rawText);
 				dataMap.put("tagLine", rawText);
 

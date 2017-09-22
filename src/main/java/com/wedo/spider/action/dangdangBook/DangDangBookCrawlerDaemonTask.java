@@ -6,11 +6,12 @@ import java.util.Map;
 import java.util.Timer;
 import java.util.TimerTask;
 
-import org.apache.log4j.Logger;
 import org.openqa.selenium.phantomjs.PhantomJSDriver;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
- * 当当爬虫
+ * 当当书籍爬虫
  * 
  * 每五分钟执行一次该任务，如果上次执行数据与五分钟后 的数据一致则说明，爬虫线程已经挂掉，则启动新的线程。
  * 
@@ -19,7 +20,7 @@ import org.openqa.selenium.phantomjs.PhantomJSDriver;
  */
 public class DangDangBookCrawlerDaemonTask extends TimerTask {
 
-	private final static Logger logger = Logger.getLogger(DangDangBookCrawlerDaemonTask.class);
+	private final static Logger logger = LoggerFactory.getLogger(DangDangBookCrawlerDaemonTask.class);
 
 	// private Thread spiderThread; // 当前爬虫执行线程
 
