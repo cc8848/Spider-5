@@ -38,7 +38,7 @@ public class DangDangBookCrawlerDaemonTask extends TimerTask {
 
 	private PhantomJSDriver driver; // 当前线程的driver
 
-	private List<Map<String, Object>> saveData = new ArrayList<Map<String, Object>>(); // 需要保存的一份数据
+	private List<String> saveData = new ArrayList<String>(); // 需要保存的一份数据
 
 	public DangDangBookCrawlerDaemonTask(String dataOutPutPath, String phantomjsPath) {
 		this.dataOutPutPath = dataOutPutPath;
@@ -79,7 +79,7 @@ public class DangDangBookCrawlerDaemonTask extends TimerTask {
 		}
 	}
 
-	public List<Map<String, Object>> getSaveData() {
+	public List<String> getSaveData() {
 		return saveData;
 	}
 

@@ -25,6 +25,8 @@ import org.openqa.selenium.support.ui.WebDriverWait;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.alibaba.fastjson.JSON;
+
 /**
  * 当当书本爬虫 页面爬去类
  * 
@@ -45,7 +47,7 @@ public class DangDangBookPageRunner implements Runnable {
 	private int recoverStartItem = -1; // 恢复线程起始条目
 	private String revoerStartPageUrl = ""; // 恢复页面的URL，用作标记为该线程是否为恢复线程，同时作为该线程的起始页
 	// 当前存储所有数据的对象
-	private List<Map<String, Object>> listData = new ArrayList<Map<String, Object>>();
+	private List<String> listData = new ArrayList<String>();
 	static {
 		// firfoxDriver 驱动支持
 		System.setProperty("webdriver.gecko.driver", "/home/melody/devOpt/geckodriver");
@@ -104,7 +106,10 @@ public class DangDangBookPageRunner implements Runnable {
 		// 设置恢复页面
 		task.setRecoverPageUrl(startPage);
 		task.setDriver(driver);
-
+		// 设置恢复项
+		task.setCurrentItemCount(recoverStartItem);		// 防止断网后无法确定爬取数据项
+		task.setCurrentPageCount(recoverStartPage);		// 防止断网后无法确定爬取数据页面
+		
 		WebElement ul = driver.findElement(By.id("component_0__0__6612"));
 		List<WebElement> findElements = ul.findElements(By.tagName("li"));
 		boolean next = true;
@@ -181,8 +186,9 @@ public class DangDangBookPageRunner implements Runnable {
 					webdriver2.quit();
 				} catch (Exception e) {
 				}
-				listData.add(dataMap);
-				task.getSaveData().add(dataMap);	// 保存一份数据
+				String jsonData = JSON.toJSONString(dataMap);
+				listData.add(jsonData);
+				task.getSaveData().add(jsonData);	// 保存一份数据
 				// 条目数增加
 				item++;
 			}
@@ -198,6 +204,13 @@ public class DangDangBookPageRunner implements Runnable {
 				} catch (InterruptedException e) {
 					e.printStackTrace();
 				}
+				// 测试输出数据
+//				try {
+//					FileUtils.writeLines(new File("/home/melody/hhhzzz.txt"), listData);
+//				} catch (IOException e) {
+//					e.printStackTrace();
+//				}
+				logger.info("进入到下一页");
 				ul = driver.findElement(By.id("component_0__0__6612"));
 				findElements = ul.findElements(By.tagName("li"));
 			} else {
@@ -209,7 +222,6 @@ public class DangDangBookPageRunner implements Runnable {
 				}
 				break;
 			}
-			logger.info("进入到下一页从");
 			// 进入下一个页面 编号加1
 			pageNum++;
 		}
@@ -264,7 +276,7 @@ public class DangDangBookPageRunner implements Runnable {
 		this.revoerStartPageUrl = revoerStartPageUrl;
 	}
 
-	public List<Map<String, Object>> getListData() {
+	public List<String> getListData() {
 		return listData;
 	}
 
