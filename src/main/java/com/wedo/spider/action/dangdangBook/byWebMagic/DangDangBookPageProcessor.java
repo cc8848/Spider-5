@@ -32,7 +32,7 @@ public class DangDangBookPageProcessor implements PageProcessor {
 	private final static MongoCollection<org.bson.Document> collection = MongoDBUtil.instance.getCollection("xxx",
 			"aaa");
 	private static AtomicInteger count = new AtomicInteger(1); // 记录条数
-
+	private static List<String> dataLines = new ArrayList<String>(8192);
 	@Override
 	public Site getSite() {
 		return site;
@@ -66,7 +66,7 @@ public class DangDangBookPageProcessor implements PageProcessor {
 				Element next = getElementByClass(pageDocument, "next");
 				if (next != null && next.child(0) != null) {
 					String nextUrl = next.child(0).attr("href");
-					System.out.println("获得下一页URL: " + nextUrl);
+					logger.info("获得下一页URL: " + nextUrl);
 					if (StringUtils.isNotBlank(nextUrl)) {
 						page.addTargetRequest("http://category.dangdang.com/" + nextUrl);
 					}
@@ -82,8 +82,8 @@ public class DangDangBookPageProcessor implements PageProcessor {
 
 			String bookDescInfo; // 书本描述信息
 			String bookAuthor; // 书本作者
-			String bookExpresss; // 书本出版社
-			String bookExpressTime; // 书本出版时间
+			String bookExpresss = ""; // 书本出版社
+			String bookExpressTime = ""; // 书本出版时间
 			String bookScore; // 书本评分
 			String bookCommentCount; // 书本评论数
 			String bookCurrentPrice = ""; // 书本当前价格
@@ -108,10 +108,12 @@ public class DangDangBookPageProcessor implements PageProcessor {
 			Element author = messbox_info.getElementById("author");
 			bookAuthor = author != null ? author.text().replace("作者:", "").trim() : "";
 			Elements t1s = messbox_info.getElementsByClass("t1");
-			// 书本出版社
-			bookExpresss = t1s.get(1) != null ? t1s.get(1).text().replace("出版社:", "").trim() : "";
-			// 书本出版时间
-			bookExpressTime = t1s.get(2) != null ? t1s.get(2).text().replace("出版时间:", "").trim() : "";
+			if(t1s != null) {
+				// 书本出版社
+				bookExpresss = t1s.get(1) != null ? t1s.get(1).text().replace("出版社:", "").trim() : "";
+				// 书本出版时间
+				bookExpressTime = t1s.get(2) != null ? t1s.get(2).text().replace("出版时间:", "").trim() : "";
+			}
 			// 书本评分
 			Element star = getElementByClass(messbox_info, "star");
 			bookScore = star != null ? star.attr("style").replace("width:", "").trim() : "";
@@ -151,9 +153,25 @@ public class DangDangBookPageProcessor implements PageProcessor {
 
 			collection.insertOne(doc);
 			logger.info("第 " + count.intValue() + " 条数据: " + bookDescInfo);
+			dataLines.add(doc.toJson());
+			if(dataLines.size() >= 4096) {
+				synchronized(count) {
+					writeToTxt(dataLines);
+					dataLines.clear();
+				}
+			}
 			count.incrementAndGet();
 		}
 
+	}
+
+	private  static void writeToTxt(List<String> lines) {
+		String dataPath = "/home/melody/ddbook.txt";
+		try {
+			FileUtils.writeLines(new File(dataPath), lines);
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
 	}
 
 	/**
@@ -203,11 +221,11 @@ public class DangDangBookPageProcessor implements PageProcessor {
 			e.printStackTrace();
 		}
 
-		Spider.create(new DangDangBookPageProcessor()).addUrl("http://category.dangdang.com/cp01.54.00.00.00.00.html")
-				.thread(64).run();
-
 		// Spider.create(new
-		// DangDangBookPageProcessor()).startUrls(urls).thread(5).run();
+		// DangDangBookPageProcessor()).addUrl("http://category.dangdang.com/cp01.54.00.00.00.00.html")
+		// .thread(64).run();
+
+		Spider.create(new DangDangBookPageProcessor()).startUrls(urls).thread(256).run();
 
 	}
 
