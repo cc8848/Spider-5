@@ -1,6 +1,8 @@
 package com.wedo.spider.action.dangdangBook.byWebMagic;
 
+import java.io.BufferedWriter;
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -29,8 +31,8 @@ public class DangDangBookPageProcessor implements PageProcessor {
 	// .setRetryTimes(3).setSleepTime(1000).setUseGzip(true);
 	private Logger logger = LoggerFactory.getLogger(DangDangBookPageProcessor.class);
 	private Site site = Site.me().setRetryTimes(3).setSleepTime(1000).setTimeOut(10000);
-	private final static MongoCollection<org.bson.Document> collection = MongoDBUtil.instance.getCollection("xxx",
-			"aaa");
+	private final static MongoCollection<org.bson.Document> collection = MongoDBUtil.instance.getCollection("ddbook",
+			"it_type");
 	private static AtomicInteger count = new AtomicInteger(1); // 记录条数
 	private static List<String> dataLines = new ArrayList<String>(8192);
 	@Override
@@ -112,7 +114,9 @@ public class DangDangBookPageProcessor implements PageProcessor {
 				// 书本出版社
 				bookExpresss = t1s.get(1) != null ? t1s.get(1).text().replace("出版社:", "").trim() : "";
 				// 书本出版时间
-				bookExpressTime = t1s.get(2) != null ? t1s.get(2).text().replace("出版时间:", "").trim() : "";
+				if(t1s.size() > 2) {
+					bookExpressTime = t1s.get(2) != null ? t1s.get(2).text().replace("出版时间:", "").trim() : "";
+				}
 			}
 			// 书本评分
 			Element star = getElementByClass(messbox_info, "star");
@@ -154,11 +158,8 @@ public class DangDangBookPageProcessor implements PageProcessor {
 			collection.insertOne(doc);
 			logger.info("第 " + count.intValue() + " 条数据: " + bookDescInfo);
 			dataLines.add(doc.toJson());
-			if(dataLines.size() >= 4096) {
-				synchronized(count) {
-					writeToTxt(dataLines);
-					dataLines.clear();
-				}
+			if(dataLines.size() > 4096) {
+				writeToTxt(dataLines);
 			}
 			count.incrementAndGet();
 		}
@@ -167,10 +168,26 @@ public class DangDangBookPageProcessor implements PageProcessor {
 
 	private  static void writeToTxt(List<String> lines) {
 		String dataPath = "/home/melody/ddbook.txt";
+		BufferedWriter writer = null;
 		try {
-			FileUtils.writeLines(new File(dataPath), lines);
+			File file = new File(dataPath);
+			writer = new BufferedWriter(new FileWriter(file,true));
+			for(String line : lines) {
+				writer.write(line);
+				writer.append("\n");
+			}
 		} catch (IOException e) {
 			e.printStackTrace();
+		}finally {
+			if(writer != null) {
+				try {
+					writer.close();
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			// 清除数据
+			lines.clear();
 		}
 	}
 
@@ -208,24 +225,31 @@ public class DangDangBookPageProcessor implements PageProcessor {
 		// 获得所有书本的分类网页URL
 		String dangdangpath = "/home/melody/dangdangBook.html";
 		List<String> urls = new ArrayList<String>();
-		try {
-			String readFileToString = FileUtils.readFileToString(new File(dangdangpath));
-			Elements es = Jsoup.parse(readFileToString).getElementsByTag("a");
-			for (Element element : es) {
-				String url = null;
-				if (StringUtils.isNotBlank((url = element.attr("href")))) {
-					urls.add(url);
-				}
-			}
-		} catch (IOException e) {
-			e.printStackTrace();
-		}
+//		try {
+//			String readFileToString = FileUtils.readFileToString(new File(dangdangpath));
+//			Elements es = Jsoup.parse(readFileToString).getElementsByTag("a");
+//			for (Element element : es) {
+//				String url = null;
+//				if (StringUtils.isNotBlank((url = element.attr("href")))) {
+//					urls.add(url);
+//				}
+//			}
+//		} catch (IOException e) {
+//			e.printStackTrace();
+//		}
 
 		// Spider.create(new
 		// DangDangBookPageProcessor()).addUrl("http://category.dangdang.com/cp01.54.00.00.00.00.html")
+		
+		
+		urls.add("http://category.dangdang.com/cp01.54.06.00.00.00.html");
+		urls.add("http://category.dangdang.com/cp01.54.00.00.00.00.html");
+		urls.add("http://category.dangdang.com/cp01.54.12.00.00.00.html");
+		
 		// .thread(64).run();
 
-		Spider.create(new DangDangBookPageProcessor()).startUrls(urls).thread(256).run();
+		Spider.create(new DangDangBookPageProcessor()).startUrls(urls).thread(64).run();
+		
 
 	}
 
