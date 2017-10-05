@@ -6,6 +6,6 @@ public class MongoDBUtilTest {
 
 	public static void main(String[] args) {
 		// 删除数据
-		MongoDBUtil.instance.dropDB("xxx");
+		MongoDBUtil.instance.dropDB("ddbook");
 	}
 }
