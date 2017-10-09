@@ -67,6 +67,9 @@ public interface Selectable {
 	 */
 	public Selectable regex(String regex);
 
+	public Selectable regex(String regex, int group);
+
+	
 	public Selectable replace(String regex, String replacement);
 
 	/**

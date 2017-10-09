@@ -5,7 +5,6 @@ import java.util.List;
 
 import org.apache.commons.collections.CollectionUtils;
 
-
 /**
  * 可选择文本的抽象实现
  * 
