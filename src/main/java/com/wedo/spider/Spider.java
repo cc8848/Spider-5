@@ -12,8 +12,6 @@ public class Spider implements Runnable,Task{
 
 	protected Downloader downloader;
 	
-	
-	
 	@Override
 	public void run() {
 		
