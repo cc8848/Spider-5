@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.HashMap;
 import java.util.Map;
 
+import us.codecraft.webmagic.model.HttpRequestBody;
+
 /**
  * 请求类 包含需要抓取的URL以及请求头的其他信息 还包含一些额外的信息
  * 
@@ -20,7 +22,9 @@ public class Request implements Serializable {
 	private String url; // 抓取url
 
 	private String method; // 方法
-
+	
+	 private HttpRequestBody requestBody;
+	 
 	private Map<String, Object> extras; // 额外的一些信息
 
 	/**
@@ -178,7 +182,13 @@ public class Request implements Serializable {
 		this.charset = charset;
 		return this;
 	}
+    public HttpRequestBody getRequestBody() {
+        return requestBody;
+    }
 
+    public void setRequestBody(HttpRequestBody requestBody) {
+        this.requestBody = requestBody;
+    }
 	@Override
 	public String toString() {
 		return "Request{" + "url='" + url + '\'' + ", method='" + method + '\'' + ", extras=" + extras + ", priority="
