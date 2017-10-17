@@ -10,5 +10,9 @@ import com.wedo.spider.Page;
  */
 public interface PageProcessor {
 
+	/**
+	 * 页面处理类
+	 * @param page
+	 */
 	public void process(Page page);
 }

@@ -3,9 +3,15 @@ package com.wedo.spider;
 import java.util.ArrayList;
 import java.util.List;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import com.wedo.spider.downloader.Downloader;
 import com.wedo.spider.pipeline.Pipeline;
 import com.wedo.spider.processor.PageProcessor;
+import com.wedo.spider.scheduler.QueueScheduler;
+import com.wedo.spider.scheduler.Scheduler;
+
 
 /**
  * 运行主类，爬虫的入口。
@@ -27,7 +33,12 @@ public class Spider implements Runnable,Task{
 	protected Site site;
 	// 
 	protected String uuid;
-	
+	// 调度器
+	protected Scheduler scheduler = new QueueScheduler();
+	//
+	protected Logger logger = LoggerFactory.getLogger(getClass());
+	//
+	protected CountableThreadPool 
 	
 	@Override
 	public void run() {
