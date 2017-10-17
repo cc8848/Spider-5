@@ -19,12 +19,14 @@ public class Request implements Serializable {
 	 */
 	private static final long serialVersionUID = 3993743680684586796L;
 
+	public static final String CYCLE_TRIED_TIMES = "_cycle_tried_times";
+
 	private String url; // 抓取url
 
 	private String method; // 方法
-	
-	 private HttpRequestBody requestBody;
-	 
+
+	private HttpRequestBody requestBody;
+
 	private Map<String, Object> extras; // 额外的一些信息
 
 	/**
@@ -182,13 +184,15 @@ public class Request implements Serializable {
 		this.charset = charset;
 		return this;
 	}
-    public HttpRequestBody getRequestBody() {
-        return requestBody;
-    }
 
-    public void setRequestBody(HttpRequestBody requestBody) {
-        this.requestBody = requestBody;
-    }
+	public HttpRequestBody getRequestBody() {
+		return requestBody;
+	}
+
+	public void setRequestBody(HttpRequestBody requestBody) {
+		this.requestBody = requestBody;
+	}
+
 	@Override
 	public String toString() {
 		return "Request{" + "url='" + url + '\'' + ", method='" + method + '\'' + ", extras=" + extras + ", priority="
