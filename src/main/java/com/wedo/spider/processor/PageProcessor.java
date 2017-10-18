@@ -1,6 +1,7 @@
 package com.wedo.spider.processor;
 
 import com.wedo.spider.Page;
+import com.wedo.spider.Site;
 
 /**
  * 页面处理器
@@ -15,4 +16,11 @@ public interface PageProcessor {
 	 * @param page
 	 */
 	public void process(Page page);
+	
+	/**
+	 * 返回爬虫基本设置
+	 * @return
+	 */
+	public Site getSite();
+	  
 }

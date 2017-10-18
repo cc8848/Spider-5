@@ -25,6 +25,11 @@ import us.codecraft.webmagic.Site;
 import us.codecraft.webmagic.Spider;
 import us.codecraft.webmagic.processor.PageProcessor;
 
+/**
+ * 
+ * @author melody
+ *
+ */
 public class DangDangBookPageProcessor implements PageProcessor {
 
 	// private Site site = Site.me()// .setHttpProxy(new HttpHost("127.0.0.1",8888))
@@ -35,6 +40,7 @@ public class DangDangBookPageProcessor implements PageProcessor {
 			"it_type");
 	private static AtomicInteger count = new AtomicInteger(1); // 记录条数
 	private static List<String> dataLines = new ArrayList<String>(8192);
+
 	@Override
 	public Site getSite() {
 		return site;
@@ -110,11 +116,11 @@ public class DangDangBookPageProcessor implements PageProcessor {
 			Element author = messbox_info.getElementById("author");
 			bookAuthor = author != null ? author.text().replace("作者:", "").trim() : "";
 			Elements t1s = messbox_info.getElementsByClass("t1");
-			if(t1s != null) {
+			if (t1s != null) {
 				// 书本出版社
 				bookExpresss = t1s.get(1) != null ? t1s.get(1).text().replace("出版社:", "").trim() : "";
 				// 书本出版时间
-				if(t1s.size() > 2) {
+				if (t1s.size() > 2) {
 					bookExpressTime = t1s.get(2) != null ? t1s.get(2).text().replace("出版时间:", "").trim() : "";
 				}
 			}
@@ -143,10 +149,12 @@ public class DangDangBookPageProcessor implements PageProcessor {
 
 			// 新建文档
 			org.bson.Document doc = new org.bson.Document();
-
-			doc.put("bookDescInfo", bookDescInfo); // 书本描述信息
-			doc.put("bookAuthor", bookAuthor); // 书本作者
-			doc.put("bookExpresss", bookExpresss); // 书本出版社
+			// 书本描述信息
+			doc.put("bookDescInfo", bookDescInfo);
+			// 书本作者
+			doc.put("bookAuthor", bookAuthor);
+			// 书本出版社
+			doc.put("bookExpresss", bookExpresss);
 			doc.put("bookExpressTime", bookExpressTime); // 书本出版时间
 			doc.put("bookScore", bookScore); // 书本评分
 			doc.put("bookCommentCount", bookCommentCount); // 书本评论数
@@ -158,7 +166,7 @@ public class DangDangBookPageProcessor implements PageProcessor {
 			collection.insertOne(doc);
 			logger.info("第 " + count.intValue() + " 条数据: " + bookDescInfo);
 			dataLines.add(doc.toJson());
-			if(dataLines.size() > 4096) {
+			if (dataLines.size() > 4096) {
 				writeToTxt(dataLines);
 			}
 			count.incrementAndGet();
@@ -166,20 +174,20 @@ public class DangDangBookPageProcessor implements PageProcessor {
 
 	}
 
-	private  static void writeToTxt(List<String> lines) {
+	private static void writeToTxt(List<String> lines) {
 		String dataPath = "/home/melody/ddbook.txt";
 		BufferedWriter writer = null;
 		try {
 			File file = new File(dataPath);
-			writer = new BufferedWriter(new FileWriter(file,true));
-			for(String line : lines) {
+			writer = new BufferedWriter(new FileWriter(file, true));
+			for (String line : lines) {
 				writer.write(line);
 				writer.append("\n");
 			}
 		} catch (IOException e) {
 			e.printStackTrace();
-		}finally {
-			if(writer != null) {
+		} finally {
+			if (writer != null) {
 				try {
 					writer.close();
 				} catch (IOException e) {
@@ -225,31 +233,29 @@ public class DangDangBookPageProcessor implements PageProcessor {
 		// 获得所有书本的分类网页URL
 		String dangdangpath = "/home/melody/dangdangBook.html";
 		List<String> urls = new ArrayList<String>();
-//		try {
-//			String readFileToString = FileUtils.readFileToString(new File(dangdangpath));
-//			Elements es = Jsoup.parse(readFileToString).getElementsByTag("a");
-//			for (Element element : es) {
-//				String url = null;
-//				if (StringUtils.isNotBlank((url = element.attr("href")))) {
-//					urls.add(url);
-//				}
-//			}
-//		} catch (IOException e) {
-//			e.printStackTrace();
-//		}
+		// try {
+		// String readFileToString = FileUtils.readFileToString(new File(dangdangpath));
+		// Elements es = Jsoup.parse(readFileToString).getElementsByTag("a");
+		// for (Element element : es) {
+		// String url = null;
+		// if (StringUtils.isNotBlank((url = element.attr("href")))) {
+		// urls.add(url);
+		// }
+		// }
+		// } catch (IOException e) {
+		// e.printStackTrace();
+		// }
 
 		// Spider.create(new
 		// DangDangBookPageProcessor()).addUrl("http://category.dangdang.com/cp01.54.00.00.00.00.html")
-		
-		
+
 		urls.add("http://category.dangdang.com/cp01.54.06.00.00.00.html");
 		urls.add("http://category.dangdang.com/cp01.54.00.00.00.00.html");
 		urls.add("http://category.dangdang.com/cp01.54.12.00.00.00.html");
-		
+
 		// .thread(64).run();
 
 		Spider.create(new DangDangBookPageProcessor()).startUrls(urls).thread(64).run();
-		
 
 	}
 
