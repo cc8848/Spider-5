@@ -107,16 +107,16 @@ public class DangDangBookPageRunner implements Runnable {
 		task.setRecoverPageUrl(startPage);
 		task.setDriver(driver);
 		// 设置恢复项
-		task.setCurrentItemCount(recoverStartItem);		// 防止断网后无法确定爬取数据项
-		task.setCurrentPageCount(recoverStartPage);		// 防止断网后无法确定爬取数据页面
-		
+		task.setCurrentItemCount(recoverStartItem); // 防止断网后无法确定爬取数据项
+		task.setCurrentPageCount(recoverStartPage); // 防止断网后无法确定爬取数据页面
+
 		WebElement ul = driver.findElement(By.id("component_0__0__6612"));
 		List<WebElement> findElements = ul.findElements(By.tagName("li"));
 		boolean next = true;
 		boolean recoverFlag = true; // 线程恢复标志 表示线程恢复后 进入到下一页后 不需要再判断recoverItem
 		int pageNum = 1; // 无论是恢复线程还是非恢复线程，初始爬取页面编号都为1
 		int item = 1;
-		
+
 		while (next) {
 			item = 1;
 			// 只有当开启pageNum大于恢复页面Num时才进入爬取列表
@@ -142,15 +142,15 @@ public class DangDangBookPageRunner implements Runnable {
 				PhantomJSDriver webdriver2 = new PhantomJSDriver(dcaps);
 				webdriver2.get(aTag.getAttribute("href"));
 				// 等待breadcrumb元素出现，如果没有则返回
-//				boolean isExited = waitForElement(By.id("breadcrumb"), webdriver2);
+				// boolean isExited = waitForElement(By.id("breadcrumb"), webdriver2);
 				// 如果元素不存在 则返回
-//				if (!isExited) {
-//					continue;
-//				}
+				// if (!isExited) {
+				// continue;
+				// }
 				// System.out.println("第 " + page + "页 --> " + item + " 条 " + " " + item + "/" +
 				// findElements.size());
 				WebElement breadcrumb = webdriver2.findElement(By.id("breadcrumb"));
-				if(breadcrumb == null) {			// 如果分类数据为空，则舍弃这条数据
+				if (breadcrumb == null) { // 如果分类数据为空，则舍弃这条数据
 					item++;
 					continue;
 				}
@@ -188,7 +188,7 @@ public class DangDangBookPageRunner implements Runnable {
 				}
 				String jsonData = JSON.toJSONString(dataMap);
 				listData.add(jsonData);
-				task.getSaveData().add(jsonData);	// 保存一份数据
+				task.getSaveData().add(jsonData); // 保存一份数据
 				// 条目数增加
 				item++;
 			}
@@ -205,11 +205,11 @@ public class DangDangBookPageRunner implements Runnable {
 					e.printStackTrace();
 				}
 				// 测试输出数据
-//				try {
-//					FileUtils.writeLines(new File("/home/melody/hhhzzz.txt"), listData);
-//				} catch (IOException e) {
-//					e.printStackTrace();
-//				}
+				// try {
+				// FileUtils.writeLines(new File("/home/melody/hhhzzz.txt"), listData);
+				// } catch (IOException e) {
+				// e.printStackTrace();
+				// }
 				logger.info("进入到下一页");
 				ul = driver.findElement(By.id("component_0__0__6612"));
 				findElements = ul.findElements(By.tagName("li"));
